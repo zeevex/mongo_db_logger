@@ -15,6 +15,10 @@ class MongoLogger < ActiveSupport::BufferedLogger
     @mongo_collection_name      = "#{Rails.env}_log"
     @mongo_connection ||= Mongo::Connection.new(db_configuration['host'], db_configuration['port'], :auto_reconnect => true).db(db_configuration['database'])
 
+    if db_configuration['username']
+      @mongo_connection.authenticate(db_configuration['username'], db_configuration['password'])
+    end
+
     # setup the capped collection if it doesn't already exist
     unless @mongo_connection.collection_names.include?(@mongo_collection_name)
       @mongo_connection.create_collection(@mongo_collection_name, {:capped => true, :size => db_configuration['capsize']})
