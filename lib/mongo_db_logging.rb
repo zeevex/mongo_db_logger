@@ -8,6 +8,8 @@ module MongoDBLogging
     
     # make sure the controller knows how to filter its parameters
     f_params = respond_to?(:filter_parameters) ? filter_parameters(params) : params
+
+
     Rails.logger.mongoize({
       :action         => action_name,
       :controller     => controller_name,
@@ -15,6 +17,9 @@ module MongoDBLogging
       :url            => request.url,
       :params         => f_params,
       :ip             => request.remote_ip
-    }) { yield }
+    }) do
+      yield
+      annotate_mongo_logger if respond_to? :annotate_mongo_logger
+    end
   end
 end
