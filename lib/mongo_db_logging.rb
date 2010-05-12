@@ -9,7 +9,9 @@ module MongoDBLogging
     return false if logged_in?
     user_agent = request.headers["USER_AGENT"]
     return true if user_agent.blank? ||
-            user_agent.match(/chartbeat|google|spider|relic|wormly|mon.?itor|service|crawl|index|bot|proxy/i)
+            user_agent.match(/chartbeat|google|spider|relic|wormly|mon.?itor|service|crawl|index|bot|proxy|basicstate/i)
+    return true if user_agent.match(/sucuri|scout|pingdom|nimbu|nagios/i)
+    return true if request.headers["PATH_INFO"] == "/" && ! request.params[:monitor].blank?
     return true if controller_name.match(/health|monitor/)
 
     false
