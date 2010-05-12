@@ -60,13 +60,13 @@ class MongoLogger < ActiveSupport::BufferedLogger
     end
     @mongo_record[:runtime]     = (runtime.real * 1000).ceil
     @mongo_record.merge!({
-            :request_length => request.content_length
+            :request_length => request.content_length || 0
     })  if request
 
     @mongo_record.merge!({
             :response_headers => MongoLogger.sanitize_hash(response.headers),
-            :response_length  => response.content_length,
-            :status_code      => response.status.split(/\s+/)[0]
+            :response_length  => response.content_length || 0,
+            :status_code      => (response.status.split(/\s+/)[0].to_i rescue nil)
     })  if response    
 
     self.class.mongo_connection[self.class.mongo_collection_name].insert(@mongo_record) rescue nil
@@ -75,7 +75,7 @@ class MongoLogger < ActiveSupport::BufferedLogger
   def add_metadata(options={})
     options.each_pair do |key, value|
       unless [:messages, :request_time, :ip, :runtime].include?(key.to_sym)
-        info("[MongoLogger : metadata] '#{key}' => '#{value}'")
+        # info("[MongoLogger : metadata] '#{key}' => '#{value}'")
         @mongo_record[key] = value
       else
         raise ArgumentError, ":#{key} is a reserved key for the mongo logger. Please choose a different key"
