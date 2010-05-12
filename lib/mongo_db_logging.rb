@@ -6,8 +6,10 @@ module MongoDBLogging
   protected
 
   def mongo_ignore_request?
+    return false if logged_in?
     user_agent = request.headers["USER_AGENT"]
-    return true if user_agent.blank? || user_agent.match(/chartbeat|google|spider|relic|wormly|mon.itor/i)
+    return true if user_agent.blank? ||
+            user_agent.match(/chartbeat|google|spider|relic|wormly|mon.?itor|service|crawl|index|bot|proxy/i)
     return true if controller_name.match(/health|monitor/)
 
     false
