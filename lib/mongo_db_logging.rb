@@ -19,7 +19,7 @@ module MongoDBLogging
       :params         => f_params,
       :ip             => request.remote_ip,
       :ssl            => request.ssl?,
-      :xhr            => request.xhr? ? "true" : "false",
+      :xhr            => request.xhr?,
       :request_headers    => MongoLogger.sanitize_hash(request.headers)
     }, request, response) do
       yield
