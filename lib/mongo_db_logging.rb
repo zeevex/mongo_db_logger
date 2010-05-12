@@ -3,8 +3,18 @@ module MongoDBLogging
     base.class_eval { around_filter :enable_mongo_logging }
   end
 
+  protected
+
+  def mongo_ignore_request?
+    user_agent = request.headers["USER_AGENT"]
+    return true if user_agent.blank? || user_agent.match(/chartbeat|google|spider|relic|wormly|mon.itor/i)
+    return true if controller_name.match(/health|monitor/)
+
+    false
+  end
+
   def enable_mongo_logging
-    return yield unless Rails.logger.respond_to?(:mongoize)
+    return yield unless Rails.logger.respond_to?(:mongoize) || mongo_ignore_request?
     
     # make sure the controller knows how to filter its parameters
     f_params = respond_to?(:filter_parameters) ? filter_parameters(params) : params
