@@ -29,6 +29,10 @@ class MongoLogger < ActiveSupport::BufferedLogger
 
   class << self
     attr_reader :mongo_collection_name, :mongo_connection
+
+    def sanitize_hash(hash)
+      {}.merge(hash.to_hash.reject {|key,val| (! val.is_a? String) || val.blank? || key.match(/\./)})
+    end
   end
 
   def initialize(level=DEBUG)
@@ -46,7 +50,7 @@ class MongoLogger < ActiveSupport::BufferedLogger
     end
   end
 
-  def mongoize(options={})   
+  def mongoize(options={}, request = nil, response = nil)
     @mongo_record = options.merge({
       :messages => Hash.new { |hash, key| hash[key] = Array.new },
       :request_time => Time.now.utc
@@ -55,6 +59,16 @@ class MongoLogger < ActiveSupport::BufferedLogger
       yield
     end
     @mongo_record[:runtime]     = (runtime.real * 1000).ceil
+    @mongo_record.merge!({
+            :request_length => request.content_length
+    })  if request
+
+    @mongo_record.merge!({
+            :response_headers => MongoLogger.sanitize_hash(response.headers),
+            :response_length  => response.content_length,
+            :status_code      => response.status.split(/\s+/)[0]
+    })  if response    
+
     self.class.mongo_connection[self.class.mongo_collection_name].insert(@mongo_record) rescue nil
   end
 

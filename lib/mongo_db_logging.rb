@@ -11,15 +11,17 @@ module MongoDBLogging
 
 
     Rails.logger.mongoize({
+      :method         => request.request_method,
       :action         => action_name,
       :controller     => controller_name,
       :path           => request.path,
       :url            => request.url,
       :params         => f_params,
       :ip             => request.remote_ip,
+      :ssl            => request.ssl?,
       :xhr            => request.xhr? ? "true" : "false",
-      :request_headers        => ({}.merge(request.headers.reject {|key,val| (! val.is_a? String) || val.blank? || key.match(/\./)}) rescue {:error => "failed to convert"})
-    }) do
+      :request_headers    => MongoLogger.sanitize_hash(request.headers)
+    }, request, response) do
       yield
       annotate_mongo_logger if respond_to? :annotate_mongo_logger
     end
