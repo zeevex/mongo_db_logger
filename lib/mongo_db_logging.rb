@@ -16,7 +16,9 @@ module MongoDBLogging
       :path           => request.path,
       :url            => request.url,
       :params         => f_params,
-      :ip             => request.remote_ip
+      :ip             => request.remote_ip,
+      :xhr            => request.xhr? ? "true" : "false",
+      :request_headers        => ({}.merge(request.headers.reject {|key,val| (! val.is_a? String) || val.blank? || key.match(/\./)}) rescue {:error => "failed to convert"})
     }) do
       yield
       annotate_mongo_logger if respond_to? :annotate_mongo_logger
