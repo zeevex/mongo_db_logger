@@ -14,7 +14,7 @@ module MongoDBLogging
   end
 
   def enable_mongo_logging
-    return yield unless Rails.logger.respond_to?(:mongoize) || mongo_ignore_request?
+    return yield unless Rails.logger.respond_to?(:mongoize) && !mongo_ignore_request?
     
     # make sure the controller knows how to filter its parameters
     f_params = respond_to?(:filter_parameters) ? filter_parameters(params) : params
