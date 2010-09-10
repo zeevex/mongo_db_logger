@@ -1,9 +1,19 @@
 module MongoDBLogging
   def self.included(base)
-    base.class_eval { around_filter :enable_mongo_logging }
+    base.class_eval do
+      around_filter :enable_mongo_logging
+      alias_method_chain :process_cleanup, :mongo
+    end
   end
 
   protected
+
+  def process_cleanup_with_mongo
+    if @mongo_do_finalize and Rails.logger.respond_to?(:finalize_mongo)
+      Rails.logger.finalize_mongo response
+      @mongo_do_finalize = false
+    end
+  end
 
   def mongo_ignore_request?
     return false if logged_in?
@@ -23,7 +33,7 @@ module MongoDBLogging
     # make sure the controller knows how to filter its parameters
     f_params = respond_to?(:filter_parameters) ? filter_parameters(params) : params
 
-
+    @mongo_do_finalize = true
     Rails.logger.mongoize({
       :method         => request.request_method,
       :action         => action_name,
@@ -36,8 +46,11 @@ module MongoDBLogging
       :xhr            => request.xhr?,
       :request_headers    => MongoLogger.sanitize_hash(request.headers)
     }, request, response) do
-      yield
-      annotate_mongo_logger if respond_to? :annotate_mongo_logger
+      begin
+        yield
+      ensure
+        annotate_mongo_logger if respond_to? :annotate_mongo_logger
+      end
     end
   end
 end

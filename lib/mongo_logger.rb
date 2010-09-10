@@ -55,20 +55,32 @@ class MongoLogger < ActiveSupport::BufferedLogger
       :messages => Hash.new { |hash, key| hash[key] = Array.new },
       :request_time => Time.now.utc
     })
+    exception = nil
     runtime = Benchmark.measure do
-      yield
+      begin
+        yield
+      rescue Exception => e
+        exception = e
+        @mongo_record.merge!({
+            :exception => exception.to_s
+        })   
+      end
     end
     @mongo_record[:runtime]     = (runtime.real * 1000).ceil
     @mongo_record.merge!({
             :request_length => request.content_length || 0
     })  if request
 
+    # self.class.mongo_connection[self.class.mongo_collection_name].insert(@mongo_record) rescue nil
+    raise exception if exception
+  end
+
+  def finalize_mongo(response = nil)
     @mongo_record.merge!({
             :response_headers => MongoLogger.sanitize_hash(response.headers),
             :response_length  => response.content_length || 0,
             :status_code      => (response.status.split(/\s+/)[0].to_i rescue nil)
-    })  if response    
-
+    })  if response
     self.class.mongo_connection[self.class.mongo_collection_name].insert(@mongo_record) rescue nil
   end
 
