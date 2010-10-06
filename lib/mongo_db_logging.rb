@@ -16,11 +16,15 @@ module MongoDBLogging
   end
 
   def mongo_ignore_request?
+    return false if request.ssl? || request.xhr?
     return false if logged_in?
     user_agent = request.headers["USER_AGENT"]
-    return true if !user_agent.blank? &&
-            user_agent.match(/chartbeat|google|spider|relic|wormly|mon.?itor|service|crawl|index|bot|proxy|basicstate/i)
-    return true if user_agent.match(/sucuri|scout|pingdom|nimbu|nagios/i)
+    return false if controller_name == "zesa"
+    if !user_agent.blank?
+      return true if
+            user_agent.match(/chartbeat|google|spider|relic|wormly|mon.?itor|service|crawl|pingdom|basicstate/i)
+      return true if user_agent.match(/sucuri|scout|pingdom|nimbu|nagios/i)
+    end
     return true if request.headers["PATH_INFO"] == "/" && ! request.params[:monitor].blank?
     return true if controller_name.match(/health|monitor/)
 
