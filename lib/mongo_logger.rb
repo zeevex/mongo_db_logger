@@ -101,8 +101,8 @@ class MongoLogger < ActiveSupport::BufferedLogger
         # remove colorization done by rails and just save the actual message
         @mongo_record[:messages][level_to_sym(severity)] << message.gsub(/(\e(\[([\d;]*[mz]?))?)?/, '').strip rescue nil
       else
-        @mongo_record[:messages][level_to_sym(severity)] << message
-      end
+        @mongo_record[:messages][level_to_sym(severity)] << message 
+      end rescue nil
     end
 
     super
