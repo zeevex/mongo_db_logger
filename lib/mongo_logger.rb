@@ -1,6 +1,8 @@
 require 'erb'
 require 'mongo'
 
+require 'zeevex_delayed'
+
 class MongoLogger < ActiveSupport::BufferedLogger
   default_capsize = (Rails.env == 'production') ? 250.megabytes : 100.megabytes
   
@@ -13,7 +15,9 @@ class MongoLogger < ActiveSupport::BufferedLogger
 
   begin
     @mongo_collection_name      = "#{Rails.env}_log"
-    @mongo_connection ||= Mongo::Connection.new(db_configuration['host'], db_configuration['port'], :auto_reconnect => true).db(db_configuration['database'])
+    @mongo_connection ||= ZeevexDelayed::ThreadPromise.new do
+      Mongo::Connection.new(db_configuration['host'], db_configuration['port'], :auto_reconnect => true).db(db_configuration['database'])
+    end
 
     if db_configuration['username']
       @mongo_connection.authenticate(db_configuration['username'], db_configuration['password'])
