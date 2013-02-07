@@ -23,7 +23,7 @@ module MongoDBLogging
     if !user_agent.blank?
       return true if
             user_agent.match(/chartbeat|google|spider|relic|wormly|mon.?itor|service|crawl|pingdom|basicstate/i)
-      return true if user_agent.match(/sucuri|scout|pingdom|nimbu|nagios/i)
+      return true if user_agent.match(/sucuri|scout|pingdom|nimbu|nagios|newrelicpinger/i)
     end
     return true if request.headers["PATH_INFO"] == "/" && ! request.params[:monitor].blank?
     return true if controller_name.match(/health|monitor/)
