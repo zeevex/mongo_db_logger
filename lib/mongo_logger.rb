@@ -28,7 +28,7 @@ class MongoLogger < ActiveSupport::BufferedLogger
       @mongo_connection.create_collection(@mongo_collection_name, {:capped => true, :size => db_configuration['capsize']})
     end
   rescue => e
-    puts "=> !! A connection to mongo could not be established - the logger will function like a normal ActiveSupport::BufferedLogger !!"
+    STDERR.puts "=> !! A connection to mongo could not be established - the logger will function like a normal ActiveSupport::BufferedLogger !!"
   end
 
   class << self
