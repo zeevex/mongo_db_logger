@@ -2,18 +2,10 @@ module MongoDBLogging
   def self.included(base)
     base.class_eval do
       around_filter :enable_mongo_logging
-      alias_method_chain :process_cleanup, :mongo
     end
   end
 
   protected
-
-  def process_cleanup_with_mongo
-    if @mongo_do_finalize and Rails.logger.respond_to?(:finalize_mongo)
-      Rails.logger.finalize_mongo response
-      @mongo_do_finalize = false
-    end
-  end
 
   def mongo_ignore_request?
     return false if request.ssl? || request.xhr?
@@ -32,12 +24,18 @@ module MongoDBLogging
   end
 
   def enable_mongo_logging
+    # our logger isn't mongoized or we don't like this request
     return yield unless Rails.logger.respond_to?(:mongoize) && !mongo_ignore_request?
-    
+
+    # this filter has already run
+    return yield if Thread.current[:mongo_do_finalize]
+
     # make sure the controller knows how to filter its parameters
     f_params = respond_to?(:filter_parameters) ? filter_parameters(params) : params
 
-    @mongo_do_finalize = true
+    Thread.current[:mongo_do_finalize] = true
+    Thread.current[:mongo_current_response] = response
+
     Rails.logger.mongoize({
       :method         => request.request_method,
       :action         => action_name,
@@ -56,5 +54,13 @@ module MongoDBLogging
         annotate_mongo_logger if respond_to? :annotate_mongo_logger
       end
     end
+  end
+end
+
+ActionDispatch::Callbacks.after do
+  if Thread.current[:mongo_do_finalize] and Rails.logger.respond_to?(:finalize_mongo)
+    Rails.logger.finalize_mongo Thread.current[:mongo_current_response]
+    Thread.current[:mongo_do_finalize] = nil
+    Thread.current[:mongo_current_response] = nil
   end
 end

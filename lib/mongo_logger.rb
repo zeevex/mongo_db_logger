@@ -82,8 +82,8 @@ class MongoLogger < ActiveSupport::BufferedLogger
   def finalize_mongo(response = nil)
     @mongo_record.merge!({
             :response_headers => MongoLogger.sanitize_hash(response.headers),
-            :response_length  => response.content_length || 0,
-            :status_code      => (response.status.split(/\s+/)[0].to_i rescue nil)
+            :response_length  => response.body.length || 0,
+            :status_code      => (response.status.to_s.split(/\s+/)[0].to_i rescue nil)
     })  if response
     self.class.mongo_connection[self.class.mongo_collection_name].insert(@mongo_record) rescue nil
   end
