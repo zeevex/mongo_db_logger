@@ -81,6 +81,7 @@ class MongoLogger < ActiveSupport::BufferedLogger
   end
 
   def finalize_mongo(response = nil)
+    return if @mongo_record.nil?
     @mongo_record.merge!({
             :response_headers => MongoLogger.sanitize_hash(response.headers),
             :response_length  => response.body.length || 0,
@@ -90,6 +91,8 @@ class MongoLogger < ActiveSupport::BufferedLogger
   end
 
   def add_metadata(options={})
+    return if @mongo_record.nil?
+
     options.each_pair do |key, value|
       unless [:messages, :request_time, :ip, :runtime].include?(key.to_sym)
         # info("[MongoLogger : metadata] '#{key}' => '#{value}'")
@@ -101,6 +104,8 @@ class MongoLogger < ActiveSupport::BufferedLogger
   end
 
   def add(severity, message = nil, progname = nil, &block)
+    return if @mongo_record.nil?
+    
     unless @level > severity
       if Rails.configuration.colorize_logging
         # remove colorization done by rails and just save the actual message
