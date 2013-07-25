@@ -25,13 +25,13 @@ module MongoDBLogging
 
   def enable_mongo_logging
     # our logger isn't mongoized or we don't like this request
-    return yield unless Rails.logger.respond_to?(:mongoize) && !mongo_ignore_request?
+    return yield unless Rails.logger.respond_to?(:mongoize, true) && !mongo_ignore_request?
 
     # this filter has already run
     return yield if Thread.current[:mongo_do_finalize]
 
     # make sure the controller knows how to filter its parameters
-    f_params = respond_to?(:filter_parameters) ? filter_parameters(params) : params
+    f_params = respond_to?(:filter_parameters, true) ? filter_parameters(params) : params
 
     Thread.current[:mongo_do_finalize] = true
     Thread.current[:mongo_current_response] = response
@@ -51,14 +51,14 @@ module MongoDBLogging
       begin
         yield
       ensure
-        annotate_mongo_logger if respond_to? :annotate_mongo_logger
+        annotate_mongo_logger if respond_to?(:annotate_mongo_logger, true)
       end
     end
   end
 end
 
 ActionDispatch::Callbacks.after do
-  if Thread.current[:mongo_do_finalize] and Rails.logger.respond_to?(:finalize_mongo)
+  if Thread.current[:mongo_do_finalize] and Rails.logger.respond_to?(:finalize_mongo, true)
     Rails.logger.finalize_mongo Thread.current[:mongo_current_response]
     Thread.current[:mongo_do_finalize] = nil
     Thread.current[:mongo_current_response] = nil
